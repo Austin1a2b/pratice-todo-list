@@ -1,0 +1,5 @@
+這是編輯todo的頁面
+<form action="/todos/{{todo._id}}" method="post">
+  <input type="text" name="name" placeholder="待辦事項" value="{{todo.name}}">
+  <button type="sumbit">送出表單</button>
+</form>

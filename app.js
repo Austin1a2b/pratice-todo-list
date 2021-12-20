@@ -1,78 +1,79 @@
 const express = require('express')
-const exphbs = require('express-handlebars')
-const Todo = require('./models/todo')
-
-
+const exphds = require('express-handlebars')
+const { render } = require('express/lib/response')
 const mongoose = require('mongoose')
-mongoose.connect('mongodb://localhost/pratice-todo-list')
 
 const app = express()
-const port = 3000
-
-app.engine('hbs', exphbs({ defaultLayout: 'main', extname: '.hbs' }))
-app.set('view engine', 'hbs')
+app.engine('handlebars', exphds({ defaultlayout: 'main' }))
+app.set('view engine', 'handlebars')
 app.use(express.urlencoded({ extended: true }))
 
+const port = 3000
+
+mongoose.connect('mongodb://localhost:27017/pratice-todo-list')
 const db = mongoose.connection
-db.on('error', () => {
-  console.log('error')
-})
+const Todo = require('./models/todo')
+
+db.on('error', (error) => console.log(error))
 
 db.once('open', () => {
-  console.log('mongodb connected')
+  console.log('mongoose connection success')
 })
 
 app.get('/', (req, res) => {
   Todo.find()
     .lean()
-    .then(todos => res.render('index', { todos: todos }))
-    .catch(error => console.error(error))
+    .then((todos) => {
+      res.render('index', { todos: todos })
+    })
 })
 
-//以下為 新增todo 功能 
 app.get('/todos/new', (req, res) => {
   res.render('new')
 })
 
-app.post("/todos", (req, res) => {
-  const name = req.body.name
-  return Todo.create({ name: name })
+app.post('/todos', (req, res) => {
+  const todo = req.body.todo
+  Todo.create({ name: todo })
     .then(() => res.redirect('/'))
-    .catch(error => console.error(error))
 })
-//#新增todo 功能
 
-//新增瀏覽某一 詳細 todo 
+
 app.get('/todos/:id', (req, res) => {
   const id = req.params.id
-  return Todo.findById(id)
+  Todo.findById(id)
     .lean()
-    .then(todo => res.render('detail', { todo: todo }))
-    .catch(error => console.error(error))
-})
-//#新增瀏覽某一 詳細 todo 
-
-//新增- 編輯todo 
-app.get('/todos/:id/edit', (req, res) => {
-  const id = req.params.id
-  return Todo.findById(id)
-    .lean()
-    .then(todo => res.render('edit', { todo: todo }))
-    .catch(error => console.log(error))
+    .then(todo => {
+      res.render('detail', { todo: todo })
+      console.log(todo)
+    })
 })
 
-app.post('/todos/:id/edit', (req, res) => {
+app.post('/todos/:id', (req, res) => {
   const id = req.params.id
   const name = req.body.name
-  return Todo.findById(id)
+  Todo.findById(id)
     .then(todo => {
       todo.name = name
       return todo.save()
     })
-    .then(() => res.redirect(`/todos/${id}`))
+    .then(res.redirect(`/todos/${id}`))
     .catch(error => console.log(error))
 })
-//#新增- 編輯todo 
-app.listen(port, () => {
-  console.log('localhost:3000')
+
+app.get('/todos/:id/edit', (req, res) => {
+  const id = req.params.id
+  Todo.findById(id)
+    .lean()
+    .then(todo => res.render('edit', { todo: todo }))
 })
+
+app.post('/todos/:id/delete', (req, res) => {
+  const id = req.params.id
+  Todo.findById(id)
+    .then((todo) => todo.remove())
+    .then(() => res.redirect('/'))
+    .catch((error) => console.log(error))
+})
+
+app.listen(port, () => { console.log(`http://localhost:${port}`) })

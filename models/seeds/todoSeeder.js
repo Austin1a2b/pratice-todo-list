@@ -1,17 +1,20 @@
 const mongoose = require('mongoose')
-const Todo = require('../Todo')
-
 mongoose.connect('mongodb://localhost/pratice-todo-list')
 const db = mongoose.connection
 
-db.on('error', () => { console.log('something error') })
+const Todo = require('../todo')
+
+let array = []
+for (let i = 1; i < 6; i++) {
+  array.push({ name: `todo-${i}` })
+}
 
 db.once('open', () => {
-  console.log('connected')
-  for (let i = 0; i < 10; i++) {
-    Todo.create({
-      name: `name-${i}`
+  Todo.insertMany(array)
+    .then(() => {
+      console.log('Seeders is  done')
+      db.close()
     })
-  }
-  console.log('done')
+    .catch(err => console.log(err))
+    .finally(() => process.exit())
 })
